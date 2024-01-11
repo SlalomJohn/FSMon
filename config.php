@@ -1,14 +1,19 @@
 <?php
 
 // Monitor configuration
-
 return array(
+      // enable/disable script work
+     'enabled' => true,
 
      // Default scan path is `script root`
 	 // 'root'   => '/root/to/scan',
 
      // allowed multi root
-     // 'root' => ['/first', '/second', ...]
+     'root' => [
+		'/srv/www/site1/public',
+		'/srv/www/site2/public',
+		'/etc/apache2',
+		],
 
      //'root' => array(
      //   __DIR__ . '\\1',
@@ -16,26 +21,38 @@ return array(
      //),
 
      // skip this dirs
-     //'ignore_dirs' => [
-     //  'C:\\path\\fs_monitor\\2\\test1'
-     //],
+     'ignore_dirs' => [
+		'/srv/www/site1/public/trash',
+		'/srv/www/site2/public/cache',
+
+     ],
 
      // ServerTag for text reports, default _SERVER[SERVER_NAME]
-	 // 'server' => 'server_name',
+	 'server' => 'SERVERNAME',
 
      // files pattern
-	 'files' => '(\.php.?|\.htaccess|\.txt)$',
+	 'files' => '(\.php.?|\.htaccess|\.json|\.js|\.yaml|\.inc|\.txt|\.conf)$',
 
       // write logs to ./logs/Ym/d-m-y.log
      'log' => true,
 
       // notify administrator email
 	 'mail' => array(
-	 	'from'   => 'info@skillz.ru',
-	 	'to'   	 => 'rustyj4ck@gmail.com',
+	 	'from'   => 'root@fsmon',
+	 	'to'   	 => 'TO-MAIL@MAIL.COM',
 
 	 	// disabled by default
 	 	'enable' => false
+//	 	'enable' => true
+	 ),
+	 'telegram' => array (
+// сюда нужно вписать токен вашего бота
+		'TELEGRAM_TOKEN' => '',
+// сюда нужно вписать ваш внутренний айдишник
+		'TELEGRAM_CHATID' => '',
+//	 	'enable' => false
+	 	'enable' => true
 	 )
 
 );
+?>

@@ -1,21 +1,59 @@
+#!/usr/bin/php
 <?php
 
 /**
  * File System monitor | FSMon
- * @version 1.0.4
+ * @version 1.0.4.20240111.00
  * @author j4ck <rustyj4ck@gmail.com>
+ * @modified DoC <ruslan_smirnoff@mail.ru>
  * @link https://github.com/rustyJ4ck/FSMon
  */
 
+$GLOBALS['debbug']="false";
 set_time_limit(0);
 error_reporting(E_ALL);
 ini_set('display_errors','on');
-
 $root_dir = $this_dir = dirname(__FILE__) . DIRECTORY_SEPARATOR;
+$config = include($this_dir . 'config.php');	// read config
+if (!$config['enabled']) {exit;}		// exit if disable
 
-// read config
+function message_to_telegram($text) {
+global $config;
+    $ch = curl_init();
+    curl_setopt_array(
+        $ch,
+        array(
+            CURLOPT_URL => "https://api.telegram.org/bot" . $config['telegram']['TELEGRAM_TOKEN'] . "/sendMessage",
+            CURLOPT_POST => TRUE,
+            CURLOPT_RETURNTRANSFER => TRUE,
+            CURLOPT_TIMEOUT => 10,
+            CURLOPT_POSTFIELDS => array(
+                "parse_mode"=> "HTML",
+                "chat_id" => $config['telegram']['TELEGRAM_CHATID'],
+                "text" => $text,
+            ),
+        )
+    );
+    curl_exec($ch);
+    curl_close($ch);
+}
 
-$config = include($this_dir . 'config.php');
+function file_to_telegram($tgfile) {
+global $config, $SERVER_NAME, $sfname;
+    if ($tgfile != "") {
+	$ch = curl_init();
+	curl_setopt($ch, CURLOPT_URL, "https://api.telegram.org/bot" . $config['telegram']['TELEGRAM_TOKEN'] . "/sendDocument?chat_id=" . $config['telegram']['TELEGRAM_CHATID']);
+	curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+	curl_setopt($ch, CURLOPT_POST, 1);
+	$cFile = new CURLFile($tgfile);
+	curl_setopt($ch, CURLOPT_POSTFIELDS, [
+	    "document" => $cFile,
+	    "caption" => "Server: " . $SERVER_NAME.", log file ".$sfname,
+	]);
+	$result = curl_exec($ch);
+	curl_close($ch);
+    }
+}
 
 if (isset($config['root'])) {
     $root_dir = $config['root'];
@@ -24,45 +62,31 @@ if (isset($config['root'])) {
 $files_preg = @$config['files'];
 
 // server name
-
 $SERVER_NAME = @$config['server'] ? $config['server'] : @$_SERVER['SERVER_NAME'];
 $SERVER_NAME = $SERVER_NAME ? $SERVER_NAME : 'localhost';
 
 $precache = $cache = array();
-
-console::start();
-
+if ($GLOBALS['debbug'] == "true") {console::start();}
 $first_run = false;
 
 // read cache
-
 $cache_file = $this_dir . '.cache';
-
 if (file_exists($cache_file)) {
     $precache = $cache = unserialize(file_get_contents($cache_file));
 } else {
     $first_run = true;
 }
 
-// scan 
-
+// scan
 $result = array();
-
 $checked_ids = array();
-
 $tree = fsTree::tree($root_dir, $config['ignore_dirs'], $files_preg);
-
-console::log("[1] list files");
-
+if ($GLOBALS['debbug'] == "true") {console::log("[1] list files");}
 foreach ($tree->getFilesIterator() as $f) {
-
-    console::log("...%s", $f);
-
+    if ($GLOBALS['debbug'] == "true") {console::log("...%s", $f);}
     $id = fsTree::fileId($f);
-
     $checked_ids [] = $id;
     $csumm = fsTree::crcFile($f);
-
     if (isset($cache[$id])) {
         // existed
         if ($cache[$id]['crc'] != $csumm) {
@@ -74,7 +98,7 @@ foreach ($tree->getFilesIterator() as $f) {
             // old one
         }
     } else {
-        // new one      
+        // new one
         $cache[$id]['crc']  = $csumm;
         $cache[$id]['file'] = $f;
         $result[]           = array('file' => $f, 'result' => 'new');
@@ -83,10 +107,10 @@ foreach ($tree->getFilesIterator() as $f) {
 }
 
 unset($tree);
-
-console::log("[2] check for deleted files");
-
-$deleted = !empty($precache) ? my_array_diff(array_keys($precache), $checked_ids) : false;
+if ($GLOBALS['debbug'] == "true") {console::log("[2] check for deleted files");}
+$arrk = array_keys($precache);
+$my_arrd = my_array_diff($arrk, $checked_ids);
+$deleted = (!empty($precache) ? $my_arrd : false);
 
 if (!empty($deleted)) {
     foreach ($deleted as $id) {
@@ -95,24 +119,20 @@ if (!empty($deleted)) {
     }
 }
 
-console::log("[3] result checks");
+if ($GLOBALS['debbug'] == "true") {console::log("[3] result checks");}
 
 if (!empty($result)) {
-    $buffer = '';
-
-    console::log('Reporting...');
+    $buffer = '*** BEGIN '.date("Y-m-d_H-i-s").PHP_EOL;
+    if ($GLOBALS['debbug'] == "true") {console::log('Reporting...');}
 
     foreach ($result as $r) {
-
         $line = sprintf("[%10s]\t%s\t%s kb\t%s"
             , $r['result']
             , $r['file']
             , @round(filesize($r['file']) / 1024, 1)
             , @date('d.m.Y H:i', filemtime($r['file']))
         );
-
-        console::log($line);
-
+        if ($GLOBALS['debbug'] == "true") {console::log($line);}
         $buffer .= $line;
         $buffer .= PHP_EOL;
     }
@@ -122,55 +142,49 @@ if (!empty($result)) {
     }
 
     // log 
-
+    $fname="";
     if (@$config['log']) {
-
         $logs_dir = dirname(__FILE__) . '/logs/' . date('Ym');
         @mkdir($logs_dir, 0770, 1);
-
-        file_put_contents($logs_dir . '/' . date('d-H-i') . '.log', $buffer);
+	$buffer .= PHP_EOL.'*** END '.date("Y-m-d_H-i-s").PHP_EOL;
+	$fname=$logs_dir . '/' . date('d-H-i') . '.log';// full log file path
+	$sfname=date('d-H-i') . '.log';			// log file name
+        file_put_contents($fname, $buffer);
     }
 
-    // mail
-
+    // send mail
     if (@$config['mail']['enable'] && !$first_run) {
-
         $from = @$config['mail']['from'] ? $config['mail']['from'] : 'root@localhost';
         $to   = @$config['mail']['to'] ? $config['mail']['to'] : 'root@localhost';
 
         if ($to === 'root@localhost') {
-            echo "Empty mail@to";
+            if ($GLOBALS['debbug'] == "true") {console::log("Empty mail@to");}
         } else {
-
             $subject = "FSMon report for " . $SERVER_NAME;
-            $buffer .= "\n\nGenerated by FSMon | " . date('d.m.Y H:i') . '.';
-
-            console::log('Message to %s', $to);
-
-            mailer::send(
-                $from, $to, $subject, $buffer
-            );
+            $buffer .= "\n\nGenerated by FSMon | " . date('Y-m-d_H-i-s') . '.';
+            if ($GLOBALS['debbug'] == "true") {console::log('Message to %s', $to);}
+            mailer::send($from, $to, $subject, $buffer);
         }
     }
+
+    // send telegram
+    if (@$config['telegram']['enable'] && !$first_run) {
+            message_to_telegram("&#127384; Server: <strong>".$SERVER_NAME."</strong> : <b><i>Code changes detect!</i></b>");
+            file_to_telegram($fname);
+    }
+
 } else {
-    console::log('All clear');
+    if ($GLOBALS['debbug'] == "true") {console::log('All clear');}
 }
 
-//
 // save result
-//
+file_put_contents($cache_file , serialize($cache));
 
-file_put_contents(
-    $cache_file
-    , serialize($cache)
-);
+if ($GLOBALS['debbug'] == "true") {console::log('Done');
+    console::log('Memory [All/Curr] %.2f %.2f', memory_get_peak_usage(), memory_get_usage());
+}
 
-console::log('Done');
-console::log('Memory [All/Curr] %.2f %.2f', memory_get_peak_usage(), memory_get_usage());
-
-//
 // Done
-//
 
 function my_array_diff(&$a, &$b) {
     $map = $out = array();
@@ -181,13 +195,10 @@ function my_array_diff(&$a, &$b) {
 }
 
 class console {
-
     private static $time;
-
     static function start() {
         self::$time = microtime(1);
     }
-
     static function log() {
         $args   = func_get_args();
         $format = array_shift($args);
@@ -196,48 +207,34 @@ class console {
         echo vsprintf($format, $args);
         echo PHP_EOL;
     }
-
     private static function time() {
         return microtime(1) - self::$time;
     }
 }
 
-/**
- * Mail helper
- */
+// Mail helper
 class mailer {
-
     static function send($from, $to, $subject, $message) {
-
         $headers = 'From: ' . $from . "\r\n" .
             'Reply-To: ' . $from . "\r\n" .
             "Content-Type: text/plain; charset=\"utf-8\"\r\n" .
             'X-Mailer: PHP/fsmon';
-
         return mail($to, $subject, $message, $headers);
     }
-
 }
 
-/**
- * FileSystem helpers
- */
+// FileSystem helpers
 class fsTree {
-
     const DS = DIRECTORY_SEPARATOR;
     const IGNORE_DOT_DIRS = true;
 
-    /**
-     * Find files
-     */
+    // Find files
     static function lsFiles($o_dir, $files_preg = '') {
         $ret = array();
         $dir = @opendir($o_dir);
-
         if (!$dir) {
             return false;
         }
-
         while (false !== ($file = readdir($dir))) {
             $path = $o_dir . /*DIRECTORY_SEPARATOR .*/
                 $file;
@@ -247,33 +244,24 @@ class fsTree {
                 $ret []= $path;
             }
         }
-
         closedir($dir);
-
         return $ret;
     }
 
-    /**
-     * Scan dirs. One level
-     */
+    // Scan dirs. One level
     static function lsDirs($o_dir) {
-
         $ret = array();
         $dir = @opendir($o_dir);
-
         if (!$dir) {
             return false;
         }
-
         while (false !== ($file = readdir($dir))) {
             $path = $o_dir /*. DIRECTORY_SEPARATOR*/ . $file;
             if ($file !== '..' && $file !== '.' && is_dir($path)) {
                 $ret [] = $path;
             }
         }
-
         closedir($dir);
-
         return $ret;
     }
 
@@ -322,8 +310,7 @@ class fsTree {
 
             if (substr($path, -1, 1) != self::DS) $path .= self::DS;
 
-            console::log("ls %s ", $_path);
-
+            if ($GLOBALS['debbug'] == "true") {console::log("ls %s ", $_path);}
             $skipper = false;
 
             if (self::IGNORE_DOT_DIRS) {
@@ -333,45 +320,31 @@ class fsTree {
             }
 
             if (!$skipper && (empty($dirs_filter) || !in_array($_path, $dirs_filter))) {
-
                 $dirs = self::lsDirs($path);
-
                 if ($dirs === false) {
                     //opendir(/var/www/html/...): failed to open dir: Permission denied
-                    console::log('..opendir failed!');
+                    if ($GLOBALS['debbug'] == "true") {console::log('..opendir failed!');}
                 } else {
-
                     $files = self::lsFiles($path, $files_preg);
-
                     $this->_dirs []= $path;
                     $this->_files = array_merge($this->_files, $files);
-
                     $this->buildTree($dirs, $dirs_filter, $files_preg);
-
                 }
 
             } else {
-                console::log("...skipped %s", $_path);
+                if ($GLOBALS['debbug'] == "true") {console::log("...skipped %s", $_path);}
             }
         }
-
-
-
-
     }
 
-    /**
-     * unique file name
-     */
+    // unique file name
     public static function fileId($path) {
         return md5($path);
     }
 
-    /**
-     * Checksum
-     */
+    // Checksum
     public static function crcFile($path) {
         return sprintf("%u", crc32(file_get_contents($path)));
     }
 }
-
+?>
