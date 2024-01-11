@@ -43,7 +43,7 @@ crontab -e
 смотрите файл конфигурации config.php
 
 ### Скачать скрипт (github)
-[https://github.com/SlalomJohn/FSMon] (https://github.com/SlalomJohn/FSMon)
+https://github.com/SlalomJohn/FSMon
 
 ### Проверить можно командой
 php fsmon.php
@@ -61,4 +61,4 @@ php fsmon.php
 Как отследить изменения файлов на сервере. мониторинг изменения страниц сайта.
 Защита от взлома сайта.
 
-[Описание на русском оригинальной версии] (http://www.skillz.ru/dev/php/article-Skript_monitoringa_izmenenii_faylov.html)
+Описание на русском оригинальной версии (http://www.skillz.ru/dev/php/article-Skript_monitoringa_izmenenii_faylov.html)
