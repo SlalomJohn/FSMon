@@ -3,7 +3,7 @@
 
 /**
  * File System monitor | FSMon
- * @version 1.0.4.20240111.00
+ * @version 1.0.4.20240117.00
  * @author j4ck <rustyj4ck@gmail.com>
  * @modified DoC <ruslan_smirnoff@mail.ru>
  * @link https://github.com/rustyJ4ck/FSMon
@@ -17,6 +17,15 @@ $root_dir = $this_dir = dirname(__FILE__) . DIRECTORY_SEPARATOR;
 $config = include($this_dir . 'config.php');	// read config
 if (!$config['enabled']) {exit;}		// exit if disable
 
+// find substring in array
+function in_arrayt($path, $dirs = array()) {
+    foreach($dirs as $a) {
+        if (stripos($path,$a) !== false) return true;
+    }
+    return false;
+}
+
+// send message to telegram
 function message_to_telegram($text) {
 global $config;
     $ch = curl_init();
@@ -38,8 +47,9 @@ global $config;
     curl_close($ch);
 }
 
-function file_to_telegram($tgfile) {
-global $config, $SERVER_NAME, $sfname;
+// send file to telegram
+function file_to_telegram($tgfile,$caption) {
+global $config;
     if ($tgfile != "") {
 	$ch = curl_init();
 	curl_setopt($ch, CURLOPT_URL, "https://api.telegram.org/bot" . $config['telegram']['TELEGRAM_TOKEN'] . "/sendDocument?chat_id=" . $config['telegram']['TELEGRAM_CHATID']);
@@ -48,7 +58,7 @@ global $config, $SERVER_NAME, $sfname;
 	$cFile = new CURLFile($tgfile);
 	curl_setopt($ch, CURLOPT_POSTFIELDS, [
 	    "document" => $cFile,
-	    "caption" => "Server: " . $SERVER_NAME.", log file ".$sfname,
+	    "caption" => $caption,
 	]);
 	$result = curl_exec($ch);
 	curl_close($ch);
@@ -167,10 +177,14 @@ if (!empty($result)) {
         }
     }
 
-    // send telegram
+    // send message to telegram
     if (@$config['telegram']['enable'] && !$first_run) {
-            message_to_telegram("&#127384; Server: <strong>".$SERVER_NAME."</strong> : <b><i>Code changes detect!</i></b>");
-            file_to_telegram($fname);
+            message_to_telegram("&#127384; Server: <strong>" . $SERVER_NAME . "</strong> - <b><i>Code changes detect at " . date("Y-m-d H:i") . "!</i></b>");
+    }
+
+    // send file to telegram
+    if (@$config['telegram']['filesend'] && !$first_run) {
+            file_to_telegram($fname,"Server: " . $SERVER_NAME . ", log file: " . $sfname);
     }
 
 } else {
@@ -293,6 +307,13 @@ class fsTree {
         $self->buildTree($root_path, $dirs_filter, $files_preg);
         return $self;
     }
+public function in_arrayt($path, $dirs = array())
+{
+    foreach($dirs as $a) {
+        if (stripos($path,$a) !== false) return true;
+    }
+    return false;
+}
 
     public function buildTree($root_path, $dirs_filter = array(), $files_preg = '.*')
     {

@@ -42,16 +42,20 @@ return array(
 	 	'to'   	 => 'TO-MAIL@MAIL.COM',
 
 	 	// disabled by default
-	 	'enable' => false
-//	 	'enable' => true
+//	 	'enable' => true,
+	 	'enable' => false,
 	 ),
 	 'telegram' => array (
-// сюда нужно вписать токен вашего бота
+// set telegram bot token
 		'TELEGRAM_TOKEN' => '',
-// сюда нужно вписать ваш внутренний айдишник
+// set telegram ID (personal or group/supergroup)
 		'TELEGRAM_CHATID' => '',
-//	 	'enable' => false
-	 	'enable' => true
+//	 	'enable' => false,
+	 	'enable' => true,
+//	 	'filesend' => false,
+	 	'filesend' => true,
+//              message - see at line 182
+//              file caption - see at line 187
 	 )
 
 );
