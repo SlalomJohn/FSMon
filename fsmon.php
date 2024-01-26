@@ -45,6 +45,8 @@ global $config;
     );
     curl_exec($ch);
     curl_close($ch);
+// timeout for sync
+sleep(1);
 }
 
 // send file to telegram
@@ -63,6 +65,8 @@ global $config;
 	$result = curl_exec($ch);
 	curl_close($ch);
     }
+// timeout for sync
+sleep(1);
 }
 
 if (isset($config['root'])) {
