@@ -31,7 +31,7 @@ return array(
 	 'server' => 'SERVERNAME',
 
      // files pattern
-	 'files' => '(\.php.?|\.htaccess|\.json|\.js|\.yaml|\.inc|\.txt|\.conf)$',
+	 'files' => '(\.php.?|\.htaccess|\.json|\.js|\.yaml|\.inc|\.css|\.conf)$',
 
       // write logs to ./logs/Ym/d-m-y.log
      'log' => true,

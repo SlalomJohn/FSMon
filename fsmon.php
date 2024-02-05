@@ -3,7 +3,7 @@
 
 /**
  * File System monitor | FSMon
- * @version 1.0.4.20240117.00
+ * @version 1.0.4.20240205.00
  * @author j4ck <rustyj4ck@gmail.com>
  * @modified DoC <ruslan_smirnoff@mail.ru>
  * @link https://github.com/rustyJ4ck/FSMon
@@ -17,7 +17,7 @@ $root_dir = $this_dir = dirname(__FILE__) . DIRECTORY_SEPARATOR;
 $config = include($this_dir . 'config.php');	// read config
 if (!$config['enabled']) {exit;}		// exit if disable
 
-// find substring in array
+// find substring array
 function in_arrayt($path, $dirs = array()) {
     foreach($dirs as $a) {
         if (stripos($path,$a) !== false) return true;
@@ -45,8 +45,7 @@ global $config;
     );
     curl_exec($ch);
     curl_close($ch);
-// timeout for sync
-sleep(1);
+    sleep(2);
 }
 
 // send file to telegram
@@ -64,9 +63,8 @@ global $config;
 	]);
 	$result = curl_exec($ch);
 	curl_close($ch);
+	sleep(2);
     }
-// timeout for sync
-sleep(1);
 }
 
 if (isset($config['root'])) {
@@ -311,13 +309,6 @@ class fsTree {
         $self->buildTree($root_path, $dirs_filter, $files_preg);
         return $self;
     }
-public function in_arrayt($path, $dirs = array())
-{
-    foreach($dirs as $a) {
-        if (stripos($path,$a) !== false) return true;
-    }
-    return false;
-}
 
     public function buildTree($root_path, $dirs_filter = array(), $files_preg = '.*')
     {
@@ -344,7 +335,7 @@ public function in_arrayt($path, $dirs = array())
                 $skipper = (substr($dirname, 0, 1) === '.');
             }
 
-            if (!$skipper && (empty($dirs_filter) || !in_array($_path, $dirs_filter))) {
+            if (!$skipper && (empty($dirs_filter) || !in_arrayt($_path, $dirs_filter))) {
                 $dirs = self::lsDirs($path);
                 if ($dirs === false) {
                     //opendir(/var/www/html/...): failed to open dir: Permission denied
