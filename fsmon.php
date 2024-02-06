@@ -17,7 +17,7 @@ $root_dir = $this_dir = dirname(__FILE__) . DIRECTORY_SEPARATOR;
 $config = include($this_dir . 'config.php');	// read config
 if (!$config['enabled']) {exit;}		// exit if disable
 
-// find substring array
+// find substring in array
 function in_arrayt($path, $dirs = array()) {
     foreach($dirs as $a) {
         if (stripos($path,$a) !== false) return true;
@@ -186,7 +186,7 @@ if (!empty($result)) {
 
     // send file to telegram
     if (@$config['telegram']['filesend'] && !$first_run) {
-            file_to_telegram($fname,"Server: " . $SERVER_NAME . ", log file: " . $sfname);
+            file_to_telegram($fname,"Code change at " . date("Y-m-d H:i") . "! Server: " . $SERVER_NAME . ", log file: " . $sfname);
     }
 
 } else {

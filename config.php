@@ -50,12 +50,10 @@ return array(
 		'TELEGRAM_TOKEN' => '',
 // set telegram ID (personal or group/supergroup)
 		'TELEGRAM_CHATID' => '',
-//	 	'enable' => false,
-	 	'enable' => true,
-//	 	'filesend' => false,
-	 	'filesend' => true,
-//              message - see at line 182
-//              file caption - see at line 187
+	 	'enable' => false,
+	 	'filesend' => false,
+//              message - see at line 184
+//              file caption - see at line 189
 	 )
 
 );
