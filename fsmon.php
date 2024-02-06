@@ -3,7 +3,7 @@
 
 /**
  * File System monitor | FSMon
- * @version 1.0.4.20240205.00
+ * @version 1.0.4.20240206.00
  * @author j4ck <rustyj4ck@gmail.com>
  * @modified DoC <ruslan_smirnoff@mail.ru>
  * @link https://github.com/rustyJ4ck/FSMon
